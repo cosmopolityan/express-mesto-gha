@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "lint": "npx eslint .",
-    "start": "node app",
+    "start": "node app.js",
     "build": "react-scripts build",
     "dev": "nodemon -q"
   },
