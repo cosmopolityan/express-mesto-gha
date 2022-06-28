@@ -34,8 +34,9 @@ module.exports.createUser = (req, res) => {
     {
       name,
       about,
-      avatar
-    })
+      avatar,
+    },
+  )
     .then((data) => res.send({ data }))
     .catch((err) => (err.name === errors.names.validation
       ? res
