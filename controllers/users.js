@@ -37,7 +37,9 @@ module.exports.createUser = (req, res) => {
       avatar,
     },
   )
-    .then((data) => res.send({ data }))
+    .then((data) => res
+      .status(200) //
+      .send({ data }))
     .catch((err) => (err.name === errors.names.validation
       ? res
         .status(errors.codes.badRequest)
