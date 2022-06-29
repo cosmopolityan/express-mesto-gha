@@ -11,8 +11,6 @@ const app = express();
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   family: 4,
-  // useUnifiedTopology: true,
-  // useNewUrlParser: true,
 });
 
 app.use(bodyParser.json());
@@ -37,8 +35,6 @@ app.use(
     credentials: true,
   }),
 );
-
-app.use(express.json());
 
 app.listen(PORT, () => {
   console.log(`Работает ${PORT} порт`);

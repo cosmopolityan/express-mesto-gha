@@ -7,7 +7,6 @@ const errors = require('../utils/errors');
 const defaultPopulation = ['owner', 'likes'];
 
 module.exports.createCard = (req, res) => {
-  console.log(req.user._id);
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user._id })
