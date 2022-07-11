@@ -1,7 +1,5 @@
 const userRouter = require('express').Router();
 
-const validate = require('../utils/validate');
-
 const {
   getUsers,
   getUser,

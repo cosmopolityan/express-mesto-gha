@@ -2,11 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const userRouter = require('./routes/users');
-const cardRouter = require('./routes/cards');
 const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
-const validate = require('./utils/validate');
 const NotFoundError = require('./utils/notfound');
 
 const { PORT = 3000 } = process.env;

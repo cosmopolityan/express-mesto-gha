@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const stringLength = {
   type: String,
@@ -42,7 +43,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.statics.findUserByCredentials = function (email, password) {
-  return User.findOne({ email }).select('+password')
+  return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
         return Promise.reject(new Error('Неверный логин и/или пароль'));

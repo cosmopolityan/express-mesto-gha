@@ -1,13 +1,14 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 
 const errors = require('../utils/errors');
+const { names } = require('../utils/errors');
+const { messages } = require('../utils/errors');
+const { JWT_SECRET } = require('../utils/constants');
 const NotFoundError = require('../utils/notfound');
 const BadRequestError = require('../utils/badrequest');
-const UnauthorizedError = require('../utils/unauthorized');
-
-const validate = require('../utils/validate');
 
 const options = {
   runValidators: true,
@@ -45,7 +46,9 @@ module.exports.getUser = (req, res) => User.findById(req.params.id)
       .send({ message: errors.messages.default })));
 
 module.exports.createUser = (req, res, next) => {
-  const { email, password, name, about, avatar } = req.body;
+  const {
+    email, password, name, about, avatar,
+  } = req.body;
 
   if (!email || !password) {
     const err = new Error('Укажите email и пароль');
@@ -61,7 +64,7 @@ module.exports.createUser = (req, res, next) => {
         next(err);
       }
       bcrypt.hash(password, 10)
-        .then(hash => User.create({
+        .then((hash) => User.create({
           email,
           password: hash,
           name,
@@ -74,7 +77,7 @@ module.exports.createUser = (req, res, next) => {
         }))
         .catch((err) => {
           if (err.name === 'ValidationError') {
-            next(new ValidationError('Введите корректные данные'));
+            next(new BadRequestError('Введите корректные данные'));
           }
           next();
         });
@@ -136,13 +139,15 @@ const tokenExpiration = { days: 7 };
 tokenExpiration.sec = 60 * 60 * 24 * tokenExpiration.days;
 tokenExpiration.ms = 1000 * tokenExpiration.sec;
 
-module.exports.login = (req, res, next) => {
+module.exports.login = (req, res /* , next */) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign(
-        { _id: user._doc._id }, JWT_SECRET, { expiresIn: tokenExpiration.sec },
+        { _id: user._id },
+        JWT_SECRET,
+        { expiresIn: tokenExpiration.sec },
       );
       res
         .cookie('jwt', token, {
