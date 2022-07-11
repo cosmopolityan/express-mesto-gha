@@ -1,6 +1,13 @@
+const bcrypt = require('bcryptjs');
+
 const User = require('../models/user');
 
 const errors = require('../utils/errors');
+const NotFoundError = require('../utils/notfound');
+const BadRequestError = require('../utils/badrequest');
+const UnauthorizedError = require('../utils/unauthorized');
+
+const validate = require('../utils/validate');
 
 const options = {
   runValidators: true,
@@ -12,6 +19,16 @@ module.exports.getUsers = (req, res) => User.find({})
   .catch(() => res
     .status(errors.codes.serverError)
     .send({ message: errors.messages.default }));
+
+module.exports.getCurrentUser = (req, res, next) => User.findById(req.user._id)
+  .then((data) => {
+    if (!data) {
+      throw new NotFoundError('Страница не найдена');
+    }
+
+    res.send({ data });
+  })
+  .catch((err) => next(err.name === names.cast ? new BadRequestError('Неверный запрос') : err));
 
 module.exports.getUser = (req, res) => User.findById(req.params.id)
   .then((data) => (data
@@ -27,26 +44,42 @@ module.exports.getUser = (req, res) => User.findById(req.params.id)
       .status(errors.codes.serverError)
       .send({ message: errors.messages.default })));
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+module.exports.createUser = (req, res, next) => {
+  const { email, password, name, about, avatar } = req.body;
 
-  User.create(
-    {
-      name,
-      about,
-      avatar,
-    },
-  )
-    .then((data) => res
-      .status(200) //
-      .send({ data }))
-    .catch((err) => (err.name === errors.names.validation
-      ? res
-        .status(errors.codes.badRequest)
-        .send({ message: errors.messages.validationError })
-      : res
-        .status(errors.codes.serverError)
-        .send({ message: errors.messages.default })));
+  if (!email || !password) {
+    const err = new Error('Укажите email и пароль');
+    err.status = 400;
+    next(err);
+  }
+
+  User.findOne({ email })
+    .then((user) => {
+      if (user) {
+        const err = new Error('Пользователь с таким email уже существует');
+        err.statusCode = 409;
+        next(err);
+      }
+      bcrypt.hash(password, 10)
+        .then(hash => User.create({
+          email,
+          password: hash,
+          name,
+          about,
+          avatar,
+        }))
+        .then(({ _id }) => res.status(201).send({
+          message: 'Вы зарегистрировались!',
+          user: { _id, email },
+        }))
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new ValidationError('Введите корректные данные'));
+          }
+          next();
+        });
+    })
+    .catch(next);
 };
 
 module.exports.updateUser = (req, res) => {
@@ -88,6 +121,42 @@ module.exports.updateUserAvatar = (req, res) => {
         return res
           .status(errors.codes.badRequest)
           .send({ message: errors.messages.validationError });
+      }
+      return err.name === errors.names.cast
+        ? res
+          .status(errors.codes.badRequest)
+          .send({ message: errors.messages.castError })
+        : res
+          .status(errors.codes.serverError)
+          .send({ message: errors.messages.default });
+    });
+};
+
+const tokenExpiration = { days: 7 };
+tokenExpiration.sec = 60 * 60 * 24 * tokenExpiration.days;
+tokenExpiration.ms = 1000 * tokenExpiration.sec;
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._doc._id }, JWT_SECRET, { expiresIn: tokenExpiration.sec },
+      );
+      res
+        .cookie('jwt', token, {
+          maxAge: tokenExpiration.ms,
+          httpOnly: true,
+          sameSite: true,
+        })
+        .send({ message: messages.ok });
+    })
+    .catch((err) => {
+      if (err.name === errors.names.validation) {
+        return res
+          .status(errors.codes.unauthorized)
+          .send({ message: errors.messages.loginError });
       }
       return err.name === errors.names.cast
         ? res

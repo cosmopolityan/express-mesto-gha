@@ -6,33 +6,54 @@ const stringLength = {
   maxlength: 30,
 };
 
-const regUrl = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
-
-const urlValidator = (val) => regUrl.test(val);
-
-const validateUrl = {
-  validator: urlValidator,
-  message: 'Укажите ссылку на изображение',
-};
+const validate = require('../utils/validate');
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       ...stringLength,
-      required:
-        'Имя пользователя',
+      required: 'Имя пользователя',
+      default: 'Жак-Ив Кусто',
     },
     about: {
       ...stringLength,
       required: 'Описание',
+      default: 'Исследователь',
     },
     avatar: {
       type: String,
       required: 'Аватар',
-      validate: validateUrl,
+      default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+      validate: validate.URL,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      validate: validate.email,
+    },
+    password: {
+      type: String,
+      required: true,
+      select: false,
     },
   },
   { versionKey: false },
 );
+
+userSchema.statics.findUserByCredentials = function (email, password) {
+  return User.findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error('Неверный логин и/или пароль'));
+      }
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          return Promise.reject(new Error('Неверный логин и/или пароль'));
+        }
+        return user;
+      });
+    });
+};
 
 module.exports = mongoose.model('user', userSchema);

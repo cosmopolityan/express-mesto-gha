@@ -11,14 +11,7 @@ const refUserId = {
   ref: 'user',
 };
 
-const regUrl = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
-
-const urlValidator = (val) => regUrl.test(val);
-
-const validateUrl = {
-  validator: urlValidator,
-  message: 'Укажите ссылку на изображение',
-};
+const validate = require('../utils/validate');
 
 const cardSchema = new mongoose.Schema(
   {
@@ -29,7 +22,7 @@ const cardSchema = new mongoose.Schema(
     link: {
       type: String,
       required: true,
-      validator: validateUrl,
+      validator: validate.URL,
     },
     owner: {
       ...refUserId,
