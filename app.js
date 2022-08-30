@@ -55,5 +55,3 @@ app.use(
 app.listen(PORT, () => {
   console.log(`Работает ${PORT} порт`);
 });
-
-/// /////

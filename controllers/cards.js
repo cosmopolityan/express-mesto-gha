@@ -1,4 +1,7 @@
 const Card = require('../models/card');
+const BadRequestError = require('../utils/badrequest');
+const ForbiddenError = require('../utils/forbiddenerror');
+const NotFoundError = require('../utils/notfound');
 
 const options = { new: true };
 
@@ -27,19 +30,26 @@ module.exports.getCards = (req, res) => Card.find({})
     .status(errors.codes.serverError)
     .send({ message: errors.messages.default }));
 
-module.exports.deleteCard = (req, res) => Card.findByIdAndDelete(req.params.id)
-  .then((data) => (data
-    ? res.send({ data })
-    : res
-      .status(errors.codes.notFound)
-      .send({ message: errors.messages.castError })))
-  .catch((err) => (err.name === errors.names.cast
-    ? res
-      .status(errors.codes.badRequest)
-      .send({ message: errors.messages.castError })
-    : res
-      .status(errors.codes.serverError)
-      .send({ message: errors.messages.default })));
+module.exports.deleteCard = (req, res, next) => {
+  Card.findByIdAndUpdate(req.params.cardId)
+    .orFail(() => new NotFoundError('Карточка отсутствует'))
+    .then((data) => {
+      if (data.owner.toString() !== req.user._id.toString()) {
+        throw new ForbiddenError('Нельзя удалять карточки других пользователей');
+      }
+      return data.remove();
+    })
+    .then((data) => {
+      res.status(200).send({ data });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Неверный запрос'));
+      } else {
+        next(err);
+      }
+    });
+};
 
 module.exports.likeCard = (req, res) => Card.findByIdAndUpdate(
   req.params.cardId,

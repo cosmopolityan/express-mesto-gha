@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+// const validator = require('validator');
+const UnauthorizedError = require('../utils/unauthorized');
 
 const stringLength = {
   type: String,
@@ -25,7 +27,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: 'Аватар',
       default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
-      validate: validate.URL,
+      validate: {
+        validator: (v) => /^https?:\/\/[www.]?[a-z0-9\D]{1,}\.[ru|net][a-z\D]{0,}#?/gi.test(v),
+        message: 'Укажите ссылку на изображение',
+      },
     },
     email: {
       type: String,
@@ -46,11 +51,11 @@ userSchema.statics.findUserByCredentials = function (email, password) {
   return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error('Неверный логин и/или пароль'));
+        return Promise.reject(new UnauthorizedError('Неверный логин и/или пароль'));
       }
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
-          return Promise.reject(new Error('Неверный логин и/или пароль'));
+          return Promise.reject(new UnauthorizedError('Неверный логин и/или пароль'));
         }
         return user;
       });

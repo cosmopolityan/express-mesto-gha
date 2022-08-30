@@ -50,12 +50,6 @@ module.exports.createUser = (req, res, next) => {
     email, password, name, about, avatar,
   } = req.body;
 
-  if (!email || !password) {
-    const err = new Error('Укажите email и пароль');
-    err.status = 400;
-    next(err);
-  }
-
   User.findOne({ email })
     .then((user) => {
       if (user) {
@@ -79,7 +73,7 @@ module.exports.createUser = (req, res, next) => {
           if (err.name === 'ValidationError') {
             next(new BadRequestError('Введите корректные данные'));
           }
-          next();
+          return next();
         });
     })
     .catch(next);
@@ -139,7 +133,7 @@ const tokenExpiration = { days: 7 };
 tokenExpiration.sec = 60 * 60 * 24 * tokenExpiration.days;
 tokenExpiration.ms = 1000 * tokenExpiration.sec;
 
-module.exports.login = (req, res /* , next */) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
@@ -158,17 +152,10 @@ module.exports.login = (req, res /* , next */) => {
         .send({ message: messages.ok });
     })
     .catch((err) => {
-      if (err.name === errors.names.validation) {
-        return res
-          .status(errors.codes.unauthorized)
-          .send({ message: errors.messages.loginError });
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError(err.message));
+      } else {
+        next(err);
       }
-      return err.name === errors.names.cast
-        ? res
-          .status(errors.codes.badRequest)
-          .send({ message: errors.messages.castError })
-        : res
-          .status(errors.codes.serverError)
-          .send({ message: errors.messages.default });
     });
 };
