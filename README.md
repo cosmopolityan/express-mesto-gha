@@ -1,6 +1,21 @@
-# react-mesto-api-full
-Репозиторий для приложения проекта `Mesto`, включающий фронтенд и бэкенд части приложения со следующими возможностями: авторизации и регистрации пользователей, операции с карточками и пользователями. Бэкенд расположите в директории `backend/`, а фронтенд - в `frontend/`. 
-  
-Пожалуйста, прикрепите в это описание ссылку на сайт, размещенный на Яндекс.Облаке.
+[![Tests for sprint 13](https://github.com/cosmopolityan/express-mesto-gha/actions/workflows/tests-13-sprint.yml/badge.svg)](https://github.com/cosmopolityan/express-mesto-gha/actions/workflows/tests-13-sprint.yml)
+[![Tests for sprint 14](https://github.com/cosmopolityan/express-mesto-gha/actions/workflows/tests-14-sprint.yml/badge.svg)](https://github.com/cosmopolityan/express-mesto-gha/actions/workflows/tests-14-sprint.yml)
 
-Чек-лист: https://code.s3.yandex.net/web-developer/checklists-pdf/new-program/checklist_15.pdf
+# Проект Mesto фронтенд + бэкенд
+
+## Директории
+
+`/routes` — папка с файлами роутера  
+`/controllers` — папка с файлами контроллеров пользователя и карточки   
+`/models` — папка с файлами описания схем пользователя и карточки  
+  
+Остальные директории вспомогательные, создаются при необходимости разработчиком
+
+## Запуск проекта
+
+`npm run start` — запускает сервер   
+`npm run dev` — запускает сервер с hot-reload
+
+## Чеклисты:
+[Чеклист 13](https://code.s3.yandex.net/web-developer/checklists/new-program/checklist-13/index.html)
+[Чеклист 14](https://code.s3.yandex.net/web-developer/checklists/new-program/checklist-14/index.html)
